@@ -30,7 +30,7 @@ find ./InterVar/*.sorted | parallel "samtools index {}"
 
 # TODO: all .bams should be calculate and to do the following method
 # BEDtools to count the gene-aligned sequences
-find ./InterVar/*.sorted | parallel "bedtools multicov -bams {} -bed Tbbgenes.bed > {}.txt"
+find ./InterVar/*.sorted | parallel "bedtools multicov -bams {} -bed ./refData/Tbbgenes.bed > {}.txt"
 
 # TODO: Final Summary
 
