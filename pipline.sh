@@ -1,31 +1,53 @@
 #!/bin/bash
 
 # TODO: make it a program like bowtie2 that could be used in a command way
-# TODO: make the directory more tidy during the processing
 
 # Quick Check on the data by `fastqc`
 zcat ./data/*fq.gz | fastqc stdin:fastqc_output;
 
 # Uncompress the reference genome
-gunzip -k Tb927_genome.fasta.gz;
+gunzip -k ./ref_data/Tb927_genome.fasta.gz;
 
 
-# Use bowtiew2 to align 
-bowtie2-build Tb927_genome.fasta Tb927_genome.fasta.index;
+# Build the index for the reference genome
+bowtie2-build ./ref_data/Tb927_genome.fasta ./ref_data/Tb927_genome.fasta.index;
 
-# TODO: auto-get the number of the pairs and assign to `num_pairs` 
+# Loop Method
+samples=$(find ./data/ -type f -iname "*_1.fq.gz" -execdir sh -c 'printf "%s\n" "${0%_1.fq*}"' {} ';' | cut -d"/" -f2 | sort | uniq);
 
-# TODO: use `num_pairs` to loop 
-###### loop or Expansion; Possible var: counter for the prefix and ######
-bowtie2 -x Tb927_genome.fasta.index -1 ./data/216_L8_1.fq.gz -2 ./data/216_L8_2.fq.gz -S 216_L8.sam;
+for sample in $samples;
+do 
+# Use bowtie2 to 
+echo -e "Processing $sample..."
+bowtie2 -p12 -x ./ref_data/Tb927_genome.fasta.index -1 "./data/${sample}_1.fq.gz" -2 "./data/${sample}_2.fq.gz" -S "./InterVar/${sample}.sam"
+done
+
+
 # Use samtools to convert .sam to .bam
-samtools view -bS 216_L8.sam > 216_L8.bam
+find ./InterVar/*.sam | parallel "samtools view -bS {} -o {}.bam"
+find ./InterVar/*.bam | parallel "samtools sort {} -o {}.sorted"
+find ./InterVar/*.sorted | parallel "samtools index {}"
 
-# TODO: Generate Counts data
-bedtools 
-###### loop or Expansion ######
+# TODO: all .bams should be calculate and to do the following method
+# BEDtools to count the gene-aligned sequences
+find ./InterVar/*.sorted | parallel "bedtools multicov -bams {} -bed Tbbgenes.bed > {}.txt"
+
+# TODO: Final Summary
 
 
+
+
+# Alternatvie Trials
+###### loop or Expansion; Possible var: counter for the prefix and ######
+
+# Parallel Method: `parallel` > two input problem ; 'bowtie2' > only one output for multisample, strange
+## pair1=$(ls ./data/*1.fq.gz | sort | awk '{printf "%s,",$0;}');
+## pair2=$(ls ./data/*2.fq.gz | sort | awk '{printf "%s,",$0;}');
+## names=$(find ./data/ -type f -iname "*_1.fq.gz" -execdir sh -c 'printf "%s\n" "${0%_1.fq*}"' {} ';' | cut -d"/" -f2 | sort | awk '{printf "%s,",$0;}');
+## bowtie2 -p12 -x ./ref_data/Tb927_genome.fasta.index -1 $pair1 -2 $pair2 -S $names.sam
+
+# GNU Parallel should do a much beter job but I dont know how to add specific two inputs at the same time with particular arguments for the next pipe
+# find ./data/*1.fq.gz ./data/*2.fq.gz | sort | parallel "bowtie2 -x ./ref_data/Tb927_genome.fasta.index -1 {$1} -2 {$2} -S {$1}.sam;"
 
 
 
