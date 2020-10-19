@@ -1,12 +1,15 @@
 #!/bin/bash
 
 # TODO: make it a program like bowtie2 that could be used in a command way
+mkdir -p ./data
+mkdir -p ./refData
+mkdir -p ./interVar
 
 # Variables for different datasets
 # one-line method: samples=$(find ./data/ -type f -iname "*_1.fq.gz" -execdir sh -c 'printf "%s\n" "${0%_1.fq*}"' {} ';' | cut -d"/" -f2 | sort | uniq)
-samples=$(cat ./refData/fqfiles | awk '{print $3}' | cut -c -6 | sort | uniq)
-slender=$(cat ./refData/fqfiles | awk '$2=="Slender" {print $3}' | cut -c -6 | sort | uniq)
-stumpy=$(cat ./refData/fqfiles | awk '$2=="Stumpy" {print $3}' | cut -c -6 | sort | uniq)
+samples=$(cat ../refData/fqfiles | awk '{print $3}' | cut -c -6 | sort | uniq)
+slender=$(cat ../refData/fqfiles | awk '$2=="Slender" {print $3}' | cut -c -6 | sort | uniq)
+stumpy=$(cat ../refData/fqfiles | awk '$2=="Stumpy" {print $3}' | cut -c -6 | sort | uniq)
 
 # Preload Functions
 meanCal () {
@@ -51,19 +54,19 @@ geneMean (){
 
 # Main 
 # Quick Check on the data by `fastqc`
-zcat ./data/*fq.gz | fastqc stdin:fastqc_output
+zcat ../data/*fq.gz | fastqc --outdir=./data/ stdin:fastqc_output
 
 # Uncompress the reference genome
-gunzip -c ./refData/Tb927_genome.fasta.gz > ./refData/Tb927_genome.fasta
+gunzip -c ../refData/Tb927_genome.fasta.gz > ./refData/Tb927_genome.fasta
 
 # Build the index for the reference genome
-bowtie2-build ./refData/Tb927_genome.fasta ./refData/Tb927_genome.fasta.index
+bowtie2-build ../refData/Tb927_genome.fasta ./refData/Tb927_genome.fasta.index
 
 for sample in $samples;
 do 
     # Use bowtie2 to 
     echo -e "Processing $sample..."
-    bowtie2 -p12 -x ./refData/Tb927_genome.fasta.index -1 "./data/${sample}_1.fq.gz" -2 "./data/${sample}_2.fq.gz" -S "./interVar/${sample}.sam"
+    bowtie2 -p12 -x ./refData/Tb927_genome.fasta.index -1 "../data/${sample}_1.fq.gz" -2 "../data/${sample}_2.fq.gz" -S "./interVar/${sample}.sam"
 done
 
 # Use samtools to convert .sam to sorted.bam and .bai files
