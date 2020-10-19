@@ -4,7 +4,6 @@
 
 ################ Preparation ################
 # Make directories to store intermediate documents
-mkdir -p ./data
 mkdir -p ./qcResult/
 mkdir -p ./refData
 mkdir -p ./interVar
@@ -89,5 +88,7 @@ do
     ((i=i%12)); ((i++==0)) && wait
     geneMean &
 done
+
+sort countStat.txt
 
 echo "The analysis process has been DONE and the final result should be produced in the countStat.txt document in this directory."

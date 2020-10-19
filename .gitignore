@@ -7,3 +7,9 @@
 *.bed
 *.bt2
 *.html
+
+countStat.txt
+
+qcResult/fastqc_output_fastqc.zip
+
+refData/Tb927_genome.fasta
