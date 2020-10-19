@@ -78,3 +78,5 @@ refData/Tb927_genome.fasta.index.4.bt2
 refData/Tb927_genome.fasta.index.rev.1.bt2
 
 refData/Tb927_genome.fasta.index.rev.2.bt2
+
+*.gz
