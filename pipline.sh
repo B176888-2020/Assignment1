@@ -3,6 +3,11 @@
 # TODO: make it a program like bowtie2 that could be used in a command with options
 
 ################ Preparation ################
+# Make directories to store intermediate documents
+mkdir -p ./data
+mkdir -p ./refData
+mkdir -p ./interVar
+
 # Variables for different datasets
 samples=$(cat /localdisk/data/BPSM/Assignment1/fastq/fqfiles | awk '{print $3}' | cut -c -6 | sort | uniq)
 slender=$(cat /localdisk/data/BPSM/Assignment1/fastq/fqfiles | awk '$2=="Slender" {print $3}' | cut -c -6 | sort | uniq)
