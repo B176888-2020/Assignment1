@@ -89,3 +89,5 @@ do
     ((i=i%12)); ((i++==0)) && wait
     geneMean &
 done
+
+echo "The analysis process has been DONE and the final result should be produced in the countStat.txt document in this directory."
