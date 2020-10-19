@@ -89,6 +89,4 @@ do
     geneMean &
 done
 
-sort countStat.txt
-
 echo "The analysis process has been DONE and the final result should be produced in the countStat.txt document in this directory."
