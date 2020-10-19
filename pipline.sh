@@ -5,6 +5,7 @@
 ################ Preparation ################
 # Make directories to store intermediate documents
 mkdir -p ./data
+mkdir -p ./qcResult/
 mkdir -p ./refData
 mkdir -p ./interVar
 
@@ -57,7 +58,7 @@ geneMean (){
 
 ################ Main Pipeline Process ################
 # Quick Check on the data by `fastqc`
-zcat /localdisk/data/BPSM/Assignment1/fastq/*fq.gz | fastqc --outdir=./data/ stdin:fastqc_output
+zcat /localdisk/data/BPSM/Assignment1/fastq/*fq.gz | fastqc --outdir=./qcResult/ stdin:fastqc_output
 
 # Uncompress the reference genome
 gunzip -c /localdisk/data/BPSM/Assignment1/Tbb_genome/Tb927_genome.fasta.gz > ./refData/Tb927_genome.fasta
@@ -78,7 +79,7 @@ find ./interVar/*.bam | parallel "samtools sort {} -o {}.sorted"
 find ./interVar/*.sorted | parallel "samtools index {}"
 
 # BEDtools to count the gene-aligned sequences
-find ./interVar/*.sorted | parallel "bedtools multicov -bams {} -bed ./refData/Tbbgenes.bed > {}.txt"
+find ./interVar/*.sorted | parallel "bedtools multicov -bams {} -bed /localdisk/data/BPSM/Assignment1/Tbbgenes.bed > {}.txt"
 
 # Gene Summary
 geneName=$(cat ./interVar/*.sam.bam.sorted.txt | awk '$5=="gene" {print $4}' | sort | uniq)
