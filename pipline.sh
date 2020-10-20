@@ -1,16 +1,26 @@
 #!/bin/bash
 
-# TODO: make it a program like bowtie2 that could be used in a command way
+# Make the shellscript a command
+while getopts f:r:b: option
+do
+case "${option}"
+in
+f) FQFILE=${OPTARG};;
+r) REFGENOME=${OPTARG};;
+b) BEDFILE=${OPTARG};;
+esac
+done
+
 mkdir -p ./qcResult/
 mkdir -p ./refData
 mkdir -p ./interVar
 
-
 # Variables for different datasets
 # one-line method: samples=$(find ./data/ -type f -iname "*_1.fq.gz" -execdir sh -c 'printf "%s\n" "${0%_1.fq*}"' {} ';' | cut -d"/" -f2 | sort | uniq)
-samples=$(cat ../refData/fqfiles | awk '{print $3}' | cut -c -6 | sort | uniq)
-slender=$(cat ../refData/fqfiles | awk '$2=="Slender" {print $3}' | cut -c -6 | sort | uniq)
-stumpy=$(cat ../refData/fqfiles | awk '$2=="Stumpy" {print $3}' | cut -c -6 | sort | uniq)
+samples=$(cat ${FQFILE}/fqfiles | awk '{print $3}' | cut -c -6 | sort | uniq)
+slender=$(cat ${FQFILE}/fqfiles | awk '$2=="Slender" {print $3}' | cut -c -6 | sort | uniq)
+stumpy=$(cat ${FQFILE}/fqfiles | awk '$2=="Stumpy" {print $3}' | cut -c -6 | sort | uniq)
+
 
 # Preload Functions
 meanCal () {
@@ -62,7 +72,7 @@ fastqc -t 12 --extract --outdir=./qcResult/ ../data/*fq.gz
 
 
 # Uncompress the reference genome
-gunzip -c ../refData/Tb927_genome.fasta.gz > ./refData/Tb927_genome.fasta
+gunzip -c ${REFGENOME}/Tb927_genome.fasta.gz > ./refData/Tb927_genome.fasta
 
 # Build the index for the reference genome
 bowtie2-build ../refData/Tb927_genome.fasta ./refData/Tb927_genome.fasta.index
