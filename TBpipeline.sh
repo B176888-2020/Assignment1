@@ -22,24 +22,6 @@ samples=$(cat ${FQFILE}/fqfiles | awk '{print $3}' | cut -c -6 | sort | uniq)
 slender=$(cat ${FQFILE}/fqfiles | awk '$2=="Slender" {print $3}' | cut -c -6 | sort | uniq)
 stumpy=$(cat ${FQFILE}/fqfiles | awk '$2=="Stumpy" {print $3}' | cut -c -6 | sort | uniq)
 
-# Preload Functions
-# Function used to calcualte the mean of two types of dataset
-# Function used to generate the summary of count data
-geneMean (){
-    # Initialisation
-    slenderMean=0;
-    stumpyMean=0;
-    
-    # Mean for slender samples and stumpy samples
-    echo "Processing Gene $gene ...."
-    slenderMean=$(cat ${OUTPUT}/interVar/slender.txt | awk -v gene="$1" '$4==gene {sum=0; for( i = 7; i <= NF; i++ ){sum+=$i};} END{print sum/(NF-6)}')
-    stumpyMean=$(cat ${OUTPUT}/interVar/stumpy.txt | awk -v gene="$1" '$4==gene {sum=0; for( i = 7; i <= NF; i++ ){sum+=$i};} END{print sum/(NF-6)}')
-
-    # Generate the output
-    echo -e "${gene}\t${slenderMean}\t${stumpyMean}" >> countStat.txt
-}
-
-
 ################ Main Pipeline Process ################
 # Quality Control with `FastQC`
 ## The quality for all the data
@@ -71,12 +53,23 @@ bedtools multicov -bams $(eval echo ${OUTPUT}/interVar/{$(echo ${slender} | tr "
 bedtools multicov -bams $(eval echo ${OUTPUT}/interVar/{$(echo ${stumpy} | tr " " ",")}.sam.bam.sorted) -bed ${BEDFILE}/Tbbgenes.bed > ${OUTPUT}/interVar/stumpy.txt
 
 # Gene count data Summary
-geneName=$(cat slender.txt stumpy.txt | awk '$5=="gene" {print $4}' | sort | uniq)
+geneName=$(cat $OUTPUT/interVar/slender.txt $OUTPUT/interVar/stumpy.txt | awk '$5=="gene" {print $4}' | sort | uniq)
 > countStat.txt
 for gene in $geneName;
 do
+    # Initialisation
+    slenderMean=0;
+    stumpyMean=0;
+
     ((i=i%12)); ((i++==0)) && wait
-    geneMean &
+
+    # Mean for slender samples and stumpy samples
+    echo "Processing Gene $gene ...."
+    slenderMean=$(cat $OUTPUT/interVar/slender.txt | awk -v gene="$gene" '$4==gene {sum=0; for( i = 7; i <= NF; i++ ){sum+=$i};} END{print sum/(NF-6)}')
+    stumpyMean=$(cat $OUTPUT/interVar/stumpy.txt | awk -v gene="$gene" '$4==gene {sum=0; for( i = 7; i <= NF; i++ ){sum+=$i};} END{print sum/(NF-6)}')
+    wait
+    # Generate the output
+    echo -e "${gene}\t${slenderMean}\t${stumpyMean}" >> ${OUTPUT}/countStat.txt
 done
 
 echo "The analysis process has been DONE and the final result should be produced in the countStat.txt document in this directory."
