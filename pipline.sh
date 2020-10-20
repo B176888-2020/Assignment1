@@ -55,7 +55,11 @@ geneMean (){
 
 # Main 
 # Quick Check on the data by `fastqc`
-find ../data/*fq.gz | zcat | fastqc --outdir=./qcResult/ stdin:{}
+zcat ../data/*fq.gz | fastqc -t 12 --extract --outdir=./qcResult/ stdin:allSamples
+fastqc -t 12 --extract --outdir=./qcResult/ ../data/*fq.gz
+
+# Assess the number and quality of data and generate the output: qcSummary.txt
+
 
 # Uncompress the reference genome
 gunzip -c ../refData/Tb927_genome.fasta.gz > ./refData/Tb927_genome.fasta
