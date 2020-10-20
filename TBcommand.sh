@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################ Arguments ################
-# Make the shellscript a command
+# Input the arguments and make the shellscript a "command"
 while getopts f:r:b:o: option
 do
 case "${option}"
