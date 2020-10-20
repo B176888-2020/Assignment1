@@ -53,7 +53,7 @@ geneMean (){
 
 ################ Main Pipeline Process ################
 # Quick Check on the data by `fastqc`
-zcat /localdisk/data/BPSM/Assignment1/fastq/*fq.gz | fastqc --outdir=./qcResult/ stdin:fastqc_output
+zcat /localdisk/data/BPSM/Assignment1/fastq/*fq.gz | fastqc --outdir=./qcResult/ stdin
 
 # Uncompress the reference genome
 gunzip -c /localdisk/data/BPSM/Assignment1/Tbb_genome/Tb927_genome.fasta.gz > ./refData/Tb927_genome.fasta
