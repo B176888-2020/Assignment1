@@ -24,30 +24,6 @@ stumpy=$(cat ${FQFILE}/fqfiles | awk '$2=="Stumpy" {print $3}' | cut -c -6 | sor
 
 # Preload Functions
 # Function used to calcualte the mean of two types of dataset
-meanCal () {
-    # Initialization
-    sum=0; mean=0;
-
-    # Calculate the mean
-    for sl in $1;
-    do
-    slCount=$(cat ${OUTPUT}/interVar/$sl.sam.bam.sorted.txt | awk -v gene="$2" '$4==gene {print $7}')
-    sum=$((sum + $slCount))
-    done
-    mean=$(awk -v suma="$sum" 'BEGIN{print suma/3}');
-    
-    # Assign the mean value to proper variable
-    if [[ "$1" == "$slender" ]]
-    then 
-    slenderMean=$mean
-    elif [[ "$1" == "$stumpy" ]]
-    then 
-    stumpyMean=$mean
-    else
-    echo "Warning: Unknown Type"
-    fi
-}
-
 # Function used to generate the summary of count data
 geneMean (){
     # Initialisation
@@ -56,8 +32,8 @@ geneMean (){
     
     # Mean for slender samples and stumpy samples
     echo "Processing Gene $gene ...."
-    meanCal "$slender" "$gene" # Actually this function could get two values at the same time with additional tag column to distinct `slender` and `stumpy`
-    meanCal "$stumpy" "$gene" # However, it would require intermediate documents that may not be required in the assignment. To keep it simple, just keep it. 
+    slenderMean=$(cat ${OUTPUT}/interVar/slender.txt | awk -v gene="$1" '$4==gene {sum=0; for( i = 7; i <= NF; i++ ){sum+=$i};} END{print sum/(NF-6)}')
+    stumpyMean=$(cat ${OUTPUT}/interVar/stumpy.txt | awk -v gene="$1" '$4==gene {sum=0; for( i = 7; i <= NF; i++ ){sum+=$i};} END{print sum/(NF-6)}')
 
     # Generate the output
     echo -e "${gene}\t${slenderMean}\t${stumpyMean}" >> countStat.txt
@@ -91,10 +67,11 @@ find ${OUTPUT}/interVar/*.bam | parallel "samtools sort {} -o {}.sorted"
 find ${OUTPUT}/interVar/*.sorted | parallel "samtools index {}"
 
 # BEDtools to count the gene-aligned sequences
-find ${OUTPUT}/interVar/*.sorted | parallel "bedtools multicov -bams {} -bed ${BEDFILE}/Tbbgenes.bed > {}.txt"
+bedtools multicov -bams $(eval echo ${OUTPUT}/interVar/{$(echo ${slender} | tr " " ",")}.sam.bam.sorted) -bed ${BEDFILE}/Tbbgenes.bed > ${OUTPUT}/interVar/slender.txt
+bedtools multicov -bams $(eval echo ${OUTPUT}/interVar/{$(echo ${stumpy} | tr " " ",")}.sam.bam.sorted) -bed ${BEDFILE}/Tbbgenes.bed > ${OUTPUT}/interVar/stumpy.txt
 
 # Gene count data Summary
-geneName=$(cat ${OUTPUT}/interVar/*.sam.bam.sorted.txt | awk '$5=="gene" {print $4}' | sort | uniq)
+geneName=$(cat slender.txt stumpy.txt | awk '$5=="gene" {print $4}' | sort | uniq)
 > countStat.txt
 for gene in $geneName;
 do
