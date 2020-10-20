@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # TODO: make it a program like bowtie2 that could be used in a command way
-mkdir -p ./data
 mkdir -p ./qcResult/
 mkdir -p ./refData
 mkdir -p ./interVar
@@ -56,7 +55,7 @@ geneMean (){
 
 # Main 
 # Quick Check on the data by `fastqc`
-zcat ../data/*fq.gz | fastqc --outdir=./qcResult/ stdin:fastqc_output
+find ../data/*fq.gz | zcat | fastqc --outdir=./qcResult/ stdin:{}
 
 # Uncompress the reference genome
 gunzip -c ../refData/Tb927_genome.fasta.gz > ./refData/Tb927_genome.fasta
