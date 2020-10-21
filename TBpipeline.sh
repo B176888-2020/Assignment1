@@ -2,7 +2,7 @@
 
 ################ Arguments ################
 # Input the arguments and make the shellscript a "command"
-while getopts f:r:b:o: option
+while getopts f:r:b:o:y option
 do
 case "${option}"
 in
@@ -10,6 +10,7 @@ f) FQDIR=${OPTARG};;
 r) REFGENOME=${OPTARG};;
 b) BEDFILE=${OPTARG};;
 o) OUTPUT=${OPTARG};;
+y) QCPASS='pass';;
 esac
 done
 
@@ -40,18 +41,23 @@ totalP=$(cat ${OUTPUT}qcResult/allSamples_fastqc/fastqc_data.txt | awk 'NR==2 {p
 echo -e "\n The number of basically passed dataset is ${passN} and the basic quality of all samples is ${totalP}. qcResultSummary.txt also provide the summary of the basic statistic results of samples"
 
 # User
+if [ "$QCPASS" = 'pass' ]; then
+key=''
+else
 read -n1 -rsp $'If everything is OK, please press SPACE to continue...or press Ctrl+C/any key to exit if you need to check the sample data or detailed outputs from FastQC.\n' key
+fi
+
 if [ "$key" = '' ]; then
 
 # Uncompress the reference genome and build the index for it
 gunzip -c ${REFGENOME}Tb927_genome.fasta.gz > ${OUTPUT}refData/Tb927_genome.fasta
-bowtie2-build ${OUTPUT}refData/Tb927_genome.fasta ${OUTPUT}refData/Tb927_genome.fasta.index
+bowtie2-build --threads 12 ${OUTPUT}refData/Tb927_genome.fasta ${OUTPUT}refData/Tb927_genome.fasta.index
 
 # Align the sequence data to the reference genome
 for sample in $samples;
 do 
     echo -e "Processing $sample..."
-    bowtie2 -p12 -x ${OUTPUT}refData/Tb927_genome.fasta.index -1 "${FQDIR}${sample}_1.fq.gz" -2 "${FQDIR}${sample}_2.fq.gz" -S "${OUTPUT}interVar/${sample}.sam"
+    bowtie2 --sensitive -p12 -x ${OUTPUT}refData/Tb927_genome.fasta.index -1 "${FQDIR}${sample}_1.fq.gz" -2 "${FQDIR}${sample}_2.fq.gz" -S "${OUTPUT}interVar/${sample}.sam"
 done
 
 # Use samtools to convert .sam to sorted.bam and produce .bai files
