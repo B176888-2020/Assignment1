@@ -57,12 +57,8 @@ cat $OUTPUT/interVar/counts.txt | awk -v slNawk="$slenderN" -v stNawk="$stumpyN"
     }
     {
         x=0; w=0
-        for (i=7;i<=6+slNawk;i++){
-            x=x+$i;
-        }
-        for (j=7+slNawk;j<=6+slNawk+stNawk;j++){
-            w=w+$j;
-        }
+        for (i=7;i<=6+slNawk;i++){x=x+$i;}
+        for (j=7+slNawk;j<=6+slNawk+stNawk;j++){w=w+$j;}
         print $4,(x/slNawk),(w/stNawk)
     }
     ' >> ${OUTPUT}/countStat.txt
