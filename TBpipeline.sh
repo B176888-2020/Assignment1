@@ -54,6 +54,7 @@ gunzip -c ${REFGENOME}Tb927_genome.fasta.gz > ${OUTPUT}refData/Tb927_genome.fast
 bowtie2-build --threads 12 ${OUTPUT}refData/Tb927_genome.fasta ${OUTPUT}refData/Tb927_genome.fasta.index
 
 # Align the sequence data to the reference genome
+echo "Aligning the sequences..."
 for sample in $samples;
 do 
     echo -e "Processing $sample..."
@@ -61,11 +62,13 @@ do
 done
 
 # Use samtools to convert .sam to sorted.bam and produce .bai files
+echo "Transforming: SAM > BAM BAI..."
 find ${OUTPUT}interVar/*.sam | parallel "samtools view -bS {} -o {}.bam"
 find ${OUTPUT}interVar/*.bam | parallel "samtools sort {} -o {}.sorted"
 find ${OUTPUT}interVar/*.sorted | parallel "samtools index {}"
 
 # BEDtools to count the gene-aligned sequences
+echo "Generating counts data and statistical mean summary..."
 bedtools multicov -bams $(eval echo ${OUTPUT}interVar/{$(echo ${slender} ${stumpy} | tr " " ",")}.sam.bam.sorted) -bed ${BEDFILE}Tbbgenes.bed > ${OUTPUT}interVar/counts.txt
 # Generate the summary of the count data
 > ${OUTPUT}countStat.txt
