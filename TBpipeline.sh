@@ -85,7 +85,7 @@ cat ${OUTPUT}interVar/counts.txt | awk -v slNawk="$slenderN" -v stNawk="$stumpyN
     }
     ' >> ${OUTPUT}countStat.txt
 
-echo "The analysis process has been DONE and the final result should be produced in the countStat.txt document in this directory."
+echo "The analysis process has been DONE and the statistic mean summary of gene count data would be produced in the countStat.txt document in ${OUTPUT} directory."
 
 else
     echo -e "\nReminder: The information above (qcResultSummary.txt) and other FastQC outputs are stored in the ${OUTPUT}qcResults/ directory."
