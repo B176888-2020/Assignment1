@@ -29,6 +29,9 @@ stumpyN=$(cat ${FQFILE}/fqfiles | awk '$2=="Stumpy" {stN+=1}; END{print stN}')
 zcat ${FQFILE}/*fq.gz | fastqc --outdir=${OUTPUT}/qcResult/ stdin:allSamples # The quality check for all the data
 fastqc -t 6 -noextract --outdir=${OUTPUT}/qcResult/ ${FQFILE}/*fq.gz # The quality check for each fastq.gz data
 
+# Assess the number and quality of the raw sequence data
+
+
 # Uncompress the reference genome
 gunzip -c ${REFGENOME}/Tb927_genome.fasta.gz > ${OUTPUT}/refData/Tb927_genome.fasta
 
@@ -56,10 +59,10 @@ cat $OUTPUT/interVar/counts.txt | awk -v slNawk="$slenderN" -v stNawk="$stumpyN"
         FS="\t"; OFS="\t";
     }
     {
-        x=0; w=0
-        for (i=7;i<=6+slNawk;i++){x=x+$i;}
-        for (j=7+slNawk;j<=6+slNawk+stNawk;j++){w=w+$j;}
-        print $4,(x/slNawk),(w/stNawk)
+        slSum=0; stSum=0
+        for (i=7;i<=6+slNawk;i++){slSum=slSum+$i;}
+        for (j=7+slNawk;j<=6+slNawk+stNawk;j++){stSum=stSum+$j;}
+        print $4,(slSum/slNawk),(stSum/stNawk)
     }
     ' >> ${OUTPUT}/countStat.txt
 
