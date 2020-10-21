@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################ Arguments ################
-# Input the arguments and make the shellscript a "command"
+# Input the arguments and make the shell script a "command"
 while getopts f:r:b:o:y option
 do
 case "${option}"
@@ -18,33 +18,34 @@ done
 # Make directories to store intermediate documents
 mkdir -p ${OUTPUT}qcResult/; mkdir -p ${OUTPUT}refData; mkdir -p ${OUTPUT}interVar;
 
-# Variables stored the names and numhers of samples
+# Variables stored the names and numbers of samples
 samples=$(cat ${FQDIR}fqfiles | awk '{print $3}' | cut -c -6 | sort | uniq)
 slender=$(cat ${FQDIR}fqfiles | awk '$2=="Slender" {print $3}' | cut -c -6 | sort | uniq)
 slenderN=$(cat ${FQDIR}fqfiles | awk '$2=="Slender" {slN+=1}; END{print slN}')
 stumpy=$(cat ${FQDIR}fqfiles | awk '$2=="Stumpy" {print $3}' | cut -c -6 | sort | uniq)
 stumpyN=$(cat ${FQDIR}fqfiles | awk '$2=="Stumpy" {stN+=1}; END{print stN}')
 
-################ Main Pipeline Process ################
+################ Main Process ################
 # Quality Control with `FastQC`
 zcat ${FQDIR}*fq.gz | fastqc --extract --outdir=${OUTPUT}qcResult/ stdin:allSamples # The quality check for all the data
 fastqc -t 6 --extract --outdir=${OUTPUT}qcResult/ ${FQDIR}*fq.gz # The quality check for each fastq.gz data
 
 # Assess the number and quality of the raw sequence data
 > ${OUTPUT}qcResult/qcResultSummary.txt
-for qcdata in $(eval echo ${OUTPUT}qcResult/{$(echo ${samples}| tr " " ",")}_{1,2}_fastqc/fastqc_data.txt);
+echo -e "\nFastQC Summary: "
+for qcdata in $(eval echo ${OUTPUT}qcResult/*fastqc/summary.txt);
 do
-awk 'NR>=2 && NR<=11 {print}' $qcdata >> ${OUTPUT}qcResult/qcResultSummary.txt
+passN=$(cat $qcdata | grep -c "PASS")
+warnN=$(cat $qcdata | grep -c "WARN")
+failN=$(cat $qcdata | grep -c "FAIL")
+echo -e "Data: $qcdata  PASS: $passN WARN: $warnN FAIL: $failN" | tee -a ${OUTPUT}qcResult/qcResultSummary.txt
 done
-passN=$(cat ${OUTPUT}qcResult/qcResultSummary.txt | grep -c "pass")
-totalP=$(cat ${OUTPUT}qcResult/allSamples_fastqc/fastqc_data.txt | awk 'NR==2 {print $3}')
-echo -e "\n The number of basically passed dataset is ${passN} and the basic quality of all samples is ${totalP}. qcResultSummary.txt also provide the summary of the basic statistic results of samples"
 
-# User
+# After getting the FastQC summary, decide whether to go through further processes
 if [ "$QCPASS" = 'pass' ]; then
 key=''
 else
-read -n1 -rsp $'If everything is OK, please press SPACE to continue...or press Ctrl+C/any key to exit if you need to check the sample data or detailed outputs from FastQC.\n' key
+read -n1 -rsp $'\nIf everything is OK, please press SPACE to continue...or press ANY KEY to exit if you need to check input datasets or detailed outputs from FastQC.\n' key
 fi
 
 if [ "$key" = '' ]; then
@@ -67,10 +68,10 @@ find ${OUTPUT}interVar/*.sam | parallel "samtools view -bS {} -o {}.bam"
 find ${OUTPUT}interVar/*.bam | parallel "samtools sort {} -o {}.sorted"
 find ${OUTPUT}interVar/*.sorted | parallel "samtools index {}"
 
-# BEDtools to count the gene-aligned sequences
+# Use bedtools to count the gene-aligned sequences
 echo "Generating counts data and statistical mean summary..."
 bedtools multicov -bams $(eval echo ${OUTPUT}interVar/{$(echo ${slender} ${stumpy} | tr " " ",")}.sam.bam.sorted) -bed ${BEDFILE}Tbbgenes.bed > ${OUTPUT}interVar/counts.txt
-# Generate the summary of the count data
+# Generate the statistic mean of the count data
 > ${OUTPUT}countStat.txt
 cat ${OUTPUT}interVar/counts.txt | awk -v slNawk="$slenderN" -v stNawk="$stumpyN" '
     BEGIN{       
@@ -87,5 +88,6 @@ cat ${OUTPUT}interVar/counts.txt | awk -v slNawk="$slenderN" -v stNawk="$stumpyN
 echo "The analysis process has been DONE and the final result should be produced in the countStat.txt document in this directory."
 
 else
+    echo -e "\nReminder: The information above (qcResultSummary.txt) and other FastQC outputs are stored in the ${OUTPUT}qcResults/ directory."
     exit
 fi
