@@ -41,7 +41,7 @@ failN=$(cat $qcdata | grep -c "FAIL")
 echo -e "Data: $qcdata  PASS: $passN WARN: $warnN FAIL: $failN" | tee -a ${OUTPUT}qcResult/qcResultSummary.txt
 done
 
-# After getting the FastQC summary, decide whether to go through further processes
+# After getting the FastQC summary, decide whether to go through downstream processes
 if [ "$QCPASS" = 'pass' ]; then
 key=''
 else
@@ -85,7 +85,7 @@ cat ${OUTPUT}interVar/counts.txt | awk -v slNawk="$slenderN" -v stNawk="$stumpyN
     }
     ' >> ${OUTPUT}countStat.txt
 
-echo "The analysis process has been DONE and the final result should be produced in the countStat.txt document in this directory."
+echo "The analysis process has been DONE and the statistic mean summary of gene count data would be produced in the countStat.txt document in ${OUTPUT} directory."
 
 else
     echo -e "\nReminder: The information above (qcResultSummary.txt) and other FastQC outputs are stored in the ${OUTPUT}qcResults/ directory."
