@@ -20,14 +20,14 @@ mkdir -p ${OUTPUT}/qcResult/; mkdir -p ${OUTPUT}/refData; mkdir -p ${OUTPUT}/int
 # Variables stored the sample names
 samples=$(cat ${FQFILE}/fqfiles | awk '{print $3}' | cut -c -6 | sort | uniq)
 slender=$(cat ${FQFILE}/fqfiles | awk '$2=="Slender" {print $3}' | cut -c -6 | sort | uniq)
+slenderN=$(cat ${FQFILE}/fqfiles | awk '$2=="Slender" {slN+=1}; END{print slN}')
 stumpy=$(cat ${FQFILE}/fqfiles | awk '$2=="Stumpy" {print $3}' | cut -c -6 | sort | uniq)
+stumpyN=$(cat ${FQFILE}/fqfiles | awk '$2=="Stumpy" {stN+=1}; END{print stN}')
 
 ################ Main Pipeline Process ################
 # Quality Control with `FastQC`
-## The quality for all the data
-zcat ${FQFILE}/*fq.gz | fastqc --outdir=${OUTPUT}/qcResult/ stdin:allSamples
-## The quality for each fastq.gz data
-fastqc -t 6 -noextract --outdir=${OUTPUT}/qcResult/ ${FQFILE}/*fq.gz 
+zcat ${FQFILE}/*fq.gz | fastqc --outdir=${OUTPUT}/qcResult/ stdin:allSamples # The quality check for all the data
+fastqc -t 6 -noextract --outdir=${OUTPUT}/qcResult/ ${FQFILE}/*fq.gz # The quality check for each fastq.gz data
 
 # Uncompress the reference genome
 gunzip -c ${REFGENOME}/Tb927_genome.fasta.gz > ${OUTPUT}/refData/Tb927_genome.fasta
@@ -49,27 +49,22 @@ find ${OUTPUT}/interVar/*.bam | parallel "samtools sort {} -o {}.sorted"
 find ${OUTPUT}/interVar/*.sorted | parallel "samtools index {}"
 
 # BEDtools to count the gene-aligned sequences
-bedtools multicov -bams $(eval echo ${OUTPUT}/interVar/{$(echo ${slender} | tr " " ",")}.sam.bam.sorted) -bed ${BEDFILE}/Tbbgenes.bed > ${OUTPUT}/interVar/slender.txt
-bedtools multicov -bams $(eval echo ${OUTPUT}/interVar/{$(echo ${stumpy} | tr " " ",")}.sam.bam.sorted) -bed ${BEDFILE}/Tbbgenes.bed > ${OUTPUT}/interVar/stumpy.txt
-
-# Gene count data Summary
-geneName=$(cat $OUTPUT/interVar/slender.txt $OUTPUT/interVar/stumpy.txt | awk '$5=="gene" {print $4}' | sort | uniq)
-> countStat.txt
-for gene in $geneName;
-do
-    # Initialisation
-    slenderMean=0;
-    stumpyMean=0;
-
-    ((i=i%12)); ((i++==0)) && wait
-
-    # Mean for slender samples and stumpy samples
-    echo "Processing Gene $gene ...."
-    slenderMean=$(cat $OUTPUT/interVar/slender.txt | awk -v gene="$gene" '$4==gene {sum=0; for( i = 7; i <= NF; i++ ){sum+=$i};} END{print sum/(NF-6)}')
-    stumpyMean=$(cat $OUTPUT/interVar/stumpy.txt | awk -v gene="$gene" '$4==gene {sum=0; for( i = 7; i <= NF; i++ ){sum+=$i};} END{print sum/(NF-6)}')
-    wait
-    # Generate the output
-    echo -e "${gene}\t${slenderMean}\t${stumpyMean}" >> ${OUTPUT}/countStat.txt
-done
+bedtools multicov -bams $(eval echo ${OUTPUT}/interVar/{$(echo ${slender} ${stumpy} | tr " " ",")}.sam.bam.sorted) -bed ${BEDFILE}/Tbbgenes.bed > ${OUTPUT}/interVar/counts.txt
+> ${OUTPUT}/countStat.txt
+cat $OUTPUT/interVar/counts.txt | awk -v slNawk="$slenderN" -v stNawk="$stumpyN" '
+    BEGIN{       
+        FS="\t"; OFS="\t";
+    }
+    {
+        x=0; w=0
+        for (i=7;i<=6+slNawk;i++){
+            x=x+$i;
+        }
+        for (j=7+slNawk;j<=6+slNawk+stNawk;j++){
+            w=w+$j;
+        }
+        print $4,(x/slNawk),(w/stNawk)
+    }
+    ' >> ${OUTPUT}/countStat.txt
 
 echo "The analysis process has been DONE and the final result should be produced in the countStat.txt document in this directory."
