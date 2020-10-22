@@ -22,7 +22,7 @@
    $ chmod +x ./TBpipeline.sh
    ```
 
-4. For this assignment, you can run these commands:
+4. For this assignment, the commands with directory arguments are listed below:
 
    **Attention**: The directories arguments should include the final "/" as it is convenient for auto-completion and they are directories containing targeted files rather than the path to the files themselves.
 
