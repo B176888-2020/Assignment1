@@ -48,7 +48,7 @@
    | ---------- | ------------------------------------------------------------ |
    | -f         | The directory of fqfile and  fq.gz files                     |
    | -r         | The directory of the reference  genome data                  |
-   | -o         | The directory to stored your  outputs                        |
+   | -o         | The directory to store your  outputs                        |
    | -y         | The confirmation to perform  downstream analysis after FastQC |
 
    
